@@ -1,12 +1,31 @@
 import React, { useState } from 'react';
 import { FileUpload } from './components/FileUpload';
 import { FileList } from './components/FileList';
+import { SearchAndFilter } from './components/SearchAndFilter';
+import { FileFilters } from './services/fileService';
+import { useQuery } from '@tanstack/react-query';
+import { fileService } from './services/fileService';
 
 function App() {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [filters, setFilters] = useState<FileFilters>({});
+
+  // Get unique file types for filter dropdown
+  const { data: files } = useQuery({
+    queryKey: ['all-files'],
+    queryFn: () => fileService.getFiles(),
+  });
+
+  const uniqueFileTypes = files 
+    ? Array.from(new Set(files.map(f => f.file_type))).sort()
+    : [];
 
   const handleUploadSuccess = () => {
     setRefreshKey(prev => prev + 1);
+  };
+
+  const handleFiltersChange = (newFilters: FileFilters) => {
+    setFilters(newFilters);
   };
 
   return (
@@ -15,7 +34,7 @@ function App() {
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold text-gray-900">Abnormal Security - File Hub</h1>
           <p className="mt-1 text-sm text-gray-500">
-            File management system
+            File management system with deduplication and smart search
           </p>
         </div>
       </header>
@@ -25,8 +44,12 @@ function App() {
             <div className="bg-white shadow sm:rounded-lg">
               <FileUpload onUploadSuccess={handleUploadSuccess} />
             </div>
+            <SearchAndFilter 
+              onFiltersChange={handleFiltersChange}
+              fileTypes={uniqueFileTypes}
+            />
             <div className="bg-white shadow sm:rounded-lg">
-              <FileList key={refreshKey} />
+              <FileList key={refreshKey} filters={filters} />
             </div>
           </div>
         </div>

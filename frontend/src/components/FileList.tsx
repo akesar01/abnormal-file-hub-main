@@ -1,19 +1,21 @@
 import React from 'react';
-import { fileService } from '../services/fileService';
+import { fileService, FileFilters } from '../services/fileService';
 import { File as FileType } from '../types/file';
 import { DocumentIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-export const FileList: React.FC = () => {
+interface FileListProps {
+  filters?: FileFilters;
+}
+
+export const FileList: React.FC<FileListProps> = ({ filters }) => {
   const queryClient = useQueryClient();
 
-  // Query for fetching files
   const { data: files, isLoading, error } = useQuery({
-    queryKey: ['files'],
-    queryFn: fileService.getFiles,
+    queryKey: ['files', filters],
+    queryFn: () => fileService.getFiles(filters),
   });
 
-  // Mutation for deleting files
   const deleteMutation = useMutation({
     mutationFn: fileService.deleteFile,
     onSuccess: () => {
@@ -21,7 +23,6 @@ export const FileList: React.FC = () => {
     },
   });
 
-  // Mutation for downloading files
   const downloadMutation = useMutation({
     mutationFn: ({ fileUrl, filename }: { fileUrl: string; filename: string }) =>
       fileService.downloadFile(fileUrl, filename),
@@ -87,13 +88,20 @@ export const FileList: React.FC = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Uploaded Files</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold text-gray-900">
+          Files {files && files.length > 0 && <span className="text-sm font-normal text-gray-500">({files.length} results)</span>}
+        </h2>
+      </div>
       {!files || files.length === 0 ? (
         <div className="text-center py-12">
           <DocumentIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No files</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No files found</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Get started by uploading a file
+            {filters && Object.keys(filters).length > 0 
+              ? 'Try adjusting your filters or search criteria'
+              : 'Get started by uploading a file'
+            }
           </p>
         </div>
       ) : (

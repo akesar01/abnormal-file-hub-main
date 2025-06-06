@@ -3,6 +3,16 @@ import { File as FileType } from '../types/file';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
+export interface FileFilters {
+  search?: string;
+  file_type?: string;
+  min_size?: number;
+  max_size?: number;
+  start_date?: string;
+  end_date?: string;
+  ordering?: string;
+}
+
 export const fileService = {
   async uploadFile(file: File): Promise<FileType> {
     const formData = new FormData();
@@ -16,8 +26,20 @@ export const fileService = {
     return response.data;
   },
 
-  async getFiles(): Promise<FileType[]> {
-    const response = await axios.get(`${API_URL}/files/`);
+  async getFiles(filters?: FileFilters): Promise<FileType[]> {
+    const params = new URLSearchParams();
+    
+    if (filters) {
+      if (filters.search) params.append('search', filters.search);
+      if (filters.file_type) params.append('file_type', filters.file_type);
+      if (filters.min_size !== undefined) params.append('min_size', filters.min_size.toString());
+      if (filters.max_size !== undefined) params.append('max_size', filters.max_size.toString());
+      if (filters.start_date) params.append('start_date', filters.start_date);
+      if (filters.end_date) params.append('end_date', filters.end_date);
+      if (filters.ordering) params.append('ordering', filters.ordering);
+    }
+
+    const response = await axios.get(`${API_URL}/files/`, { params });
     return response.data;
   },
 
